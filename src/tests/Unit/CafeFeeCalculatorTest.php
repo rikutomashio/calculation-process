@@ -118,4 +118,72 @@ class CafeFeeCalculatorTest extends TestCase
         $this->assertSame(209, $result['tax']);
         $this->assertSame(2299, $result['total']);
     }
+
+    public function test_calculate_normal_course_one_minute_extension_fee()
+    {
+        // Arrange
+
+        $calculator = new CafeFeeCalculator();
+
+        $enterAt = new DateTimeImmutable('2026-07-08 10:00:00');
+        $leaveAt = new DateTimeImmutable('2026-07-08 11:01:00');
+
+        // Act
+
+        $result = $calculator->calculate(
+            $enterAt,
+            $leaveAt,
+            CourseType::NORMAL
+        );
+
+        // Assert
+        $this->assertSame(600, $result['subtotal']);
+        $this->assertSame(60, $result['tax']);
+        $this->assertSame(660, $result['total']);
+    }
+
+    public function test_calculate_normal_course_ten_minutes_extension_fee()
+    {
+        // Arrange
+
+        $calculator = new CafeFeeCalculator();
+
+        $enterAt = new DateTimeImmutable('2026-07-08 10:00:00');
+        $leaveAt = new DateTimeImmutable('2026-07-08 11:10:00');
+
+        // Act
+
+        $result = $calculator->calculate(
+            $enterAt,
+            $leaveAt,
+            CourseType::NORMAL
+        );
+
+        // Assert
+        $this->assertSame(600, $result['subtotal']);
+        $this->assertSame(60, $result['tax']);
+        $this->assertSame(660, $result['total']);
+    }
+
+    public function test_calculate_normal_course_eleven_minutes_extension_fee()
+    {
+        // Arrange
+        $calculator = new CafeFeeCalculator();
+
+        $enterAt = new DateTimeImmutable('2026-07-08 10:00:00');
+        $leaveAt = new DateTimeImmutable('2026-07-08 11:11:00');
+
+        // Act
+
+        $result = $calculator->calculate(
+            $enterAt,
+            $leaveAt,
+            CourseType::NORMAL
+        );
+
+        // Assert
+        $this->assertSame(700, $result['subtotal']);
+        $this->assertSame(70, $result['tax']);
+        $this->assertSame(770, $result['total']);
+    }
 }
