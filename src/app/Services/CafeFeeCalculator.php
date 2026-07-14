@@ -14,32 +14,32 @@ class CafeFeeCalculator
     ): array {
         $basePrice = $courseType->price();
 
-        $totalinterval = $leaveAt->diff($enterAt);
 
-        $totalMinutes = ($totalinterval->days * 24 * 60)
-            + ($totalinterval->h * 60)
-            + $totalinterval->i;
+        $totalMinutes = $this->calculateMinutes(
+            $enterAt,
+            $leaveAt
+        );
 
         $courseMinutes = $courseType->minutes();
 
+        // コース時間を超過した延長時間を算出する
         $overTimeMinutes = max(0, $totalMinutes - $courseMinutes);
 
         $extendStartTime = $enterAt->modify("+{$courseMinutes} minutes");
 
-        $nightTimeStart = $enterAt->setTime(22, 0);
+        $nightStartTime = $enterAt->setTime(22, 0);
 
+        // 深夜延長料金の計算開始時刻を決定する
+        $nightExtensionStart = $extendStartTime > $nightStartTime
+            ? $extendStartTime
+            : $nightStartTime;
 
-        if ($extendStartTime > $nightTimeStart) {
-            $nightExtensionStart = $extendStartTime;
-        } else {
-            $nightExtensionStart = $nightTimeStart;
-        }
-
-        if ($overTimeMinutes > 0 && $leaveAt > $nightTimeStart) {
-            $interval = $leaveAt->diff($nightExtensionStart);
-            $nightExtensionMinutes = ($interval->days * 24 * 60)
-                + ($interval->h * 60)
-                + $interval->i;
+        // 深夜時間帯に発生した延長時間を算出する
+        if ($overTimeMinutes > 0 && $leaveAt > $nightStartTime) {
+            $nightExtensionMinutes = $this->calculateMinutes(
+                $nightExtensionStart,
+                $leaveAt
+            );
         } else {
             $nightExtensionMinutes = 0;
         }
@@ -48,6 +48,7 @@ class CafeFeeCalculator
 
         $nightExtensionCharge = (int) ($numberOfNightExtensionCharges * 100 * 1.15);
 
+        // 通常時間帯の延長時間を算出する
         $normalExtensionMinutes = $overTimeMinutes - $nightExtensionMinutes;
 
         $numberOfNormalExtensionCharges = (int) ceil($normalExtensionMinutes / 10);
@@ -61,12 +62,22 @@ class CafeFeeCalculator
 
         $total = $subtotal + $tax;
 
-
-
         return [
             'subtotal' => $subtotal,
             'tax' => $tax,
             'total' => $total,
         ];
+    }
+
+
+    private function calculateMinutes(
+        DateTimeImmutable $start,
+        DateTimeImmutable $end
+    ): int {
+        $interval = $end->diff($start);
+
+        return ($interval->days * 24 * 60)
+            + ($interval->h * 60)
+            + $interval->i;
     }
 }
